@@ -44,7 +44,7 @@ def submit_form():
         return jsonify({"error": "Failed to fetch access token"}), 500
 
     # Prepare data for LeadPerfection API
-    lead_api_url = "https://apitest.leadperfection.com/forward-look"  # Replace with the correct endpoint
+    lead_api_url = "https://apitest.leadperfection.com/api/Leads/GetLeadsForwardLook"  # Correct endpoint
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/x-www-form-urlencoded"
