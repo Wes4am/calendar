@@ -1,5 +1,6 @@
 from flask import Flask, jsonify
 import requests
+import os
 from apscheduler.schedulers.background import BackgroundScheduler
 
 app = Flask(__name__)
@@ -13,10 +14,10 @@ def fetch_token():
     headers = {"Content-Type": "application/x-www-form-urlencoded"}
     body = {
         "grant_type": "password",
-        "username": "HPG Marketing",
-        "password": "HPG2024!!",
-        "clientid": "ey49a",
-        "appkey": "E9F45E59-C92B-4224-8F5E-9D18445296BC"
+        "username": os.getenv("USERNAME"),
+        "password": os.getenv("PASSWORD"),
+        "clientid": os.getenv("CLIENTID"),
+        "appkey": os.getenv("APPKEY"),
     }
 
     try:
