@@ -1,16 +1,12 @@
-from flask import Flask, jsonify
-from flask_cors import CORS  # Add this
+from flask import Flask, jsonify, request
+from flask_cors import CORS
 import requests
 import os
-from apscheduler.schedulers.background import BackgroundScheduler
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+CORS(app)
 
-# Global variable to store the token
-token_data = {"token": None}
-
-# Function to fetch the token
+# Function to fetch the access token
 def fetch_token():
     url = "https://apitest.leadperfection.com/token"
     headers = {"Content-Type": "application/x-www-form-urlencoded"}
@@ -25,28 +21,51 @@ def fetch_token():
     try:
         response = requests.post(url, headers=headers, data=body)
         if response.status_code == 200:
-            token_data["token"] = response.json()
-            print("Token updated successfully!")
+            return response.json().get("access_token")
         else:
             print(f"Failed to fetch token: {response.status_code} - {response.text}")
+            return None
     except Exception as e:
         print(f"Error fetching token: {e}")
+        return None
 
-# Schedule the token refresh every 24 hours
-scheduler = BackgroundScheduler()
-scheduler.add_job(fetch_token, "interval", hours=24)
-scheduler.start()
+# API route to handle form submission
+@app.route("/submit-form", methods=["POST"])
+def submit_form():
+    # Get form data from the request
+    form_data = request.json  # Assuming the frontend sends JSON
+    branch_id = form_data.get("branchid", "")
+    product_id = form_data.get("productid", "")
+    zip_code = form_data.get("zip", "")
 
-# API route to get the token
-@app.route("/get-token", methods=["GET"])
-def get_token():
-    if token_data["token"]:
-        return jsonify(token_data["token"])
-    else:
-        return jsonify({"error": "Token not available yet"}), 500
+    # Fetch the access token
+    access_token = fetch_token()
+    if not access_token:
+        return jsonify({"error": "Failed to fetch access token"}), 500
 
-# Run the initial token fetch when the server starts
-fetch_token()
+    # Prepare data for LeadPerfection API
+    lead_api_url = "https://apitest.leadperfection.com/forward-look"  # Replace with the correct endpoint
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+
+    # Data for the LeadPerfection API
+    lead_data = {
+        "branchid": branch_id,
+        "productid": product_id,
+        "zip": zip_code
+    }
+
+    try:
+        # Send the form data to the LeadPerfection API
+        response = requests.post(lead_api_url, headers=headers, data=lead_data)
+        if response.status_code == 200:
+            return jsonify(response.json())  # Return the LeadPerfection API response
+        else:
+            return jsonify({"error": response.text, "status": response.status_code}), response.status_code
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
