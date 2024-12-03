@@ -1,9 +1,11 @@
 from flask import Flask, jsonify
+from flask_cors import CORS  # Add this
 import requests
 import os
 from apscheduler.schedulers.background import BackgroundScheduler
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 # Global variable to store the token
 token_data = {"token": None}
