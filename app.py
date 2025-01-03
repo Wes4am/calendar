@@ -1,10 +1,8 @@
 from flask import Flask, jsonify, request
-from flask_cors import CORS
 import requests
 import os
 
 app = Flask(__name__)
-CORS(app)
 
 # Function to fetch the access token
 def fetch_token():
@@ -29,39 +27,75 @@ def fetch_token():
         print(f"Error fetching token: {e}")
         return None
 
-# API route to handle form submission
-@app.route("/submit-form", methods=["POST"])
-def submit_form():
-    # Get form data from the request
-    form_data = request.json  # Assuming the frontend sends JSON
-    branch_id = form_data.get("branchid", "")
-    product_id = form_data.get("productid", "")
-    zip_code = form_data.get("zip", "")
-
-    # Fetch the access token
+# Endpoint 1: Submit Survey and Create Calendar
+@app.route("/submit-survey", methods=["POST"])
+def submit_survey():
+    survey_data = request.json
     access_token = fetch_token()
     if not access_token:
         return jsonify({"error": "Failed to fetch access token"}), 500
 
-    # Prepare data for LeadPerfection API
-    lead_api_url = "https://apitest.leadperfection.com/api/Leads/GetLeadsForwardLook"  # Correct endpoint
+    survey_payload = {
+        "branchid": "TMP",
+        "productid": "Bath",
+        "zip": survey_data.get("postal_code", ""),
+    }
+
+    survey_url = "https://apitest.leadperfection.com/api/Leads/GetLeadsForwardLook"
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/x-www-form-urlencoded"
     }
 
-    # Data for the LeadPerfection API
-    lead_data = {
-        "branchid": branch_id,
-        "productid": product_id,
-        "zip": zip_code
+    try:
+        response = requests.post(survey_url, headers=headers, data=survey_payload)
+        if response.status_code == 200:
+            return jsonify(response.json())
+        else:
+            return jsonify({"error": response.text, "status": response.status_code}), response.status_code
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Endpoint 2: Book Appointment
+@app.route("/book-appointment", methods=["POST"])
+def book_appointment():
+    appointment_data = request.json
+    access_token = fetch_token()
+    if not access_token:
+        return jsonify({"error": "Failed to fetch access token"}), 500
+
+    time_of_day = appointment_data.get("time_of_day", "").lower()
+    call_morning = time_of_day == "morning"
+    call_afternoon = time_of_day == "afternoon"
+    call_evening = time_of_day == "evening"
+
+    booking_payload = {
+        "branchID": "TMP",
+        "productID": "Bath",
+        "firstname": appointment_data.get("firstname", ""),
+        "lastname": appointment_data.get("lastname", ""),
+        "apptdate": appointment_data.get("apptdate", ""),
+        "appttime": appointment_data.get("appttime", ""),
+        "callmorning": call_morning,
+        "callafternoon": call_afternoon,
+        "callevening": call_evening,
+        "phone": appointment_data.get("phone", ""),
+        "email": appointment_data.get("email", ""),
+        "address": appointment_data.get("address", ""),
+        "city": appointment_data.get("city", ""),
+        "postal_code": appointment_data.get("postal_code", ""),
+    }
+
+    booking_url = "https://apitest.leadperfection.com/api/Leads/LeadAdd"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/x-www-form-urlencoded"
     }
 
     try:
-        # Send the form data to the LeadPerfection API
-        response = requests.post(lead_api_url, headers=headers, data=lead_data)
+        response = requests.post(booking_url, headers=headers, data=booking_payload)
         if response.status_code == 200:
-            return jsonify(response.json())  # Return the LeadPerfection API response
+            return jsonify(response.json())
         else:
             return jsonify({"error": response.text, "status": response.status_code}), response.status_code
     except Exception as e:
