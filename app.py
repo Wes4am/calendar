@@ -76,6 +76,12 @@ def book_appointment():
         return jsonify({"error": "Failed to fetch access token"}), 500
 
     request_data = request.json
+    required_fields = ["firstname", "lastname", "apptdate", "appttime"]
+    for field in required_fields:
+        if not request_data.get(field):
+            print(f"Missing required field: {field}")
+            return jsonify({"error": f"Missing required field: {field}"}), 400
+
     payload = {
         "branchID": "TMP",
         "productID": "Bath",
@@ -108,6 +114,7 @@ def book_appointment():
         if response.status_code == 200:
             return jsonify(response.json())
         else:
+            print(f"LeadAdd API Error: {response.status_code} - {response.text}")
             return jsonify({"error": response.text, "status": response.status_code}), response.status_code
     except Exception as e:
         print(f"Error during LeadAdd API call: {e}")
