@@ -3,8 +3,16 @@ from flask_cors import CORS
 import requests
 import os
 
+# Initialize Flask app
 app = Flask(__name__)
-CORS(app)  # Automatically handle CORS for all routes
+
+# Enable CORS for all routes
+CORS(app)
+
+# Root route to test if the API is running
+@app.route("/", methods=["GET"])
+def home():
+    return jsonify({"message": "API is running successfully!"})
 
 # Function to fetch the access token
 def fetch_token():
@@ -29,28 +37,37 @@ def fetch_token():
         print(f"Error fetching token: {e}")
         return None
 
+# Handle preflight OPTIONS requests
+@app.route("/<path:path>", methods=["OPTIONS"])
+def handle_preflight(path):
+    response = jsonify({"message": "Preflight request handled"})
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"]
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+    return response, 204
+
 # Endpoint 1: Submit Survey and Create Calendar
-@app.route("/submit-survey", methods=["POST"])
-def submit_survey():
-    survey_data = request.json
+@app.route("/submit-form", methods=["POST"])
+def submit_form():
+    request_data = request.json
     access_token = fetch_token()
     if not access_token:
         return jsonify({"error": "Failed to fetch access token"}), 500
 
-    survey_payload = {
-        "branchid": "TMP",
-        "productid": "Bath",
-        "zip": survey_data.get("postal_code", ""),
+    payload = {
+        "branchid": request_data.get("branchid", "TMP"),  # Default to "TMP"
+        "productid": request_data.get("productid", "Bath"),  # Default to "Bath"
+        "zip": request_data.get("zip", ""),
     }
 
-    survey_url = "https://apitest.leadperfection.com/api/Leads/GetLeadsForwardLook"
+    url = "https://apitest.leadperfection.com/api/Leads/GetLeadsForwardLook"
     headers = {
         "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/x-www-form-urlencoded"
+        "Content-Type": "application/x-www-form-urlencoded",
     }
 
     try:
-        response = requests.post(survey_url, headers=headers, data=survey_payload)
+        response = requests.post(url, headers=headers, data=payload)
         if response.status_code == 200:
             return jsonify(response.json())
         else:
@@ -61,41 +78,41 @@ def submit_survey():
 # Endpoint 2: Book Appointment
 @app.route("/book-appointment", methods=["POST"])
 def book_appointment():
-    appointment_data = request.json
+    request_data = request.json
     access_token = fetch_token()
     if not access_token:
         return jsonify({"error": "Failed to fetch access token"}), 500
 
-    time_of_day = appointment_data.get("time_of_day", "").lower()
+    time_of_day = request_data.get("time_of_day", "").lower()
     call_morning = time_of_day == "morning"
     call_afternoon = time_of_day == "afternoon"
     call_evening = time_of_day == "evening"
 
-    booking_payload = {
+    payload = {
         "branchID": "TMP",
         "productID": "Bath",
-        "firstname": appointment_data.get("firstname", ""),
-        "lastname": appointment_data.get("lastname", ""),
-        "apptdate": appointment_data.get("apptdate", ""),
-        "appttime": appointment_data.get("appttime", ""),
+        "firstname": request_data.get("firstname", ""),
+        "lastname": request_data.get("lastname", ""),
+        "apptdate": request_data.get("apptdate", ""),
+        "appttime": request_data.get("appttime", ""),
         "callmorning": call_morning,
         "callafternoon": call_afternoon,
         "callevening": call_evening,
-        "phone": appointment_data.get("phone", ""),
-        "email": appointment_data.get("email", ""),
-        "address": appointment_data.get("address", ""),
-        "city": appointment_data.get("city", ""),
-        "postal_code": appointment_data.get("postal_code", ""),
+        "phone": request_data.get("phone", ""),
+        "email": request_data.get("email", ""),
+        "address": request_data.get("address", ""),
+        "city": request_data.get("city", ""),
+        "postal_code": request_data.get("postal_code", ""),
     }
 
-    booking_url = "https://apitest.leadperfection.com/api/Leads/LeadAdd"
+    url = "https://apitest.leadperfection.com/api/Leads/LeadAdd"
     headers = {
         "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/x-www-form-urlencoded"
+        "Content-Type": "application/x-www-form-urlencoded",
     }
 
     try:
-        response = requests.post(booking_url, headers=headers, data=booking_payload)
+        response = requests.post(url, headers=headers, data=payload)
         if response.status_code == 200:
             return jsonify(response.json())
         else:
@@ -103,5 +120,6 @@ def book_appointment():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# Run the Flask app
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
