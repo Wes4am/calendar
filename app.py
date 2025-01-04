@@ -1,8 +1,10 @@
-from flask import Flask, jsonify, request, make_response
+from flask import Flask, jsonify, request
+from flask_cors import CORS
 import requests
 import os
 
 app = Flask(__name__)
+CORS(app)  # Automatically handle CORS for all routes
 
 # Function to fetch the access token
 def fetch_token():
@@ -26,14 +28,6 @@ def fetch_token():
     except Exception as e:
         print(f"Error fetching token: {e}")
         return None
-
-# Add a global after_request handler to disable CORS
-@app.after_request
-def add_cors_headers(response):
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-    return response
 
 # Endpoint 1: Submit Survey and Create Calendar
 @app.route("/submit-survey", methods=["POST"])
