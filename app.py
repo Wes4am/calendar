@@ -7,15 +7,8 @@ import os
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
-# Global variable to store the access token
-cached_token = None
-
-# Function to fetch the access token (only if not cached)
+# Function to fetch the access token
 def fetch_token():
-    global cached_token
-    if cached_token:  # If token already exists, reuse it
-        return cached_token
-
     url = "https://apitest.leadperfection.com/token"
     headers = {"Content-Type": "application/x-www-form-urlencoded"}
     body = {
@@ -29,9 +22,9 @@ def fetch_token():
     try:
         response = requests.post(url, headers=headers, data=body)
         if response.status_code == 200:
-            cached_token = response.json().get("access_token")  # Cache the token
-            print("Access token fetched successfully.")
-            return cached_token
+            access_token = response.json().get("access_token")
+            print(f"Fetched Access Token: {access_token}")  # Debug log
+            return access_token
         else:
             print(f"Failed to fetch token: {response.status_code} - {response.text}")
             return None
@@ -47,7 +40,7 @@ def home():
 # Endpoint 1: Submit Survey and Create Calendar
 @app.route("/submit-form", methods=["POST"])
 def submit_form():
-    access_token = fetch_token()  # Use the cached token
+    access_token = fetch_token()  # Fetch token for this request
     if not access_token:
         return jsonify({"error": "Failed to fetch access token"}), 500
 
@@ -76,7 +69,7 @@ def submit_form():
 # Endpoint 2: Book Appointment
 @app.route("/book-appointment", methods=["POST"])
 def book_appointment():
-    access_token = fetch_token()  # Use the cached token
+    access_token = fetch_token()  # Fetch token for this request
     if not access_token:
         return jsonify({"error": "Failed to fetch access token"}), 500
 
