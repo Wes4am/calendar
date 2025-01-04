@@ -69,8 +69,10 @@ def submit_form():
 # Endpoint 2: Book Appointment
 @app.route("/book-appointment", methods=["POST"])
 def book_appointment():
-    access_token = fetch_token()  # Fetch token for this request
+    access_token = fetch_token()
+    print(f"Access Token Used for /book-appointment: {access_token}")  # Debug log
     if not access_token:
+        print("Failed to fetch access token.")
         return jsonify({"error": "Failed to fetch access token"}), 500
 
     request_data = request.json
@@ -97,13 +99,18 @@ def book_appointment():
         "Content-Type": "application/json",
     }
 
+    print("Headers Sent to LeadAdd API:", headers)  # Debug log
+    print("Payload Sent to LeadAdd API:", payload)  # Debug log
+
     try:
         response = requests.post(url, headers=headers, json=payload)
+        print("Response from LeadAdd API:", response.status_code, response.text)  # Debug response
         if response.status_code == 200:
             return jsonify(response.json())
         else:
             return jsonify({"error": response.text, "status": response.status_code}), response.status_code
     except Exception as e:
+        print(f"Error during LeadAdd API call: {e}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
