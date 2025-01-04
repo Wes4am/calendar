@@ -42,7 +42,7 @@ def fetch_token():
 def handle_preflight(path):
     response = jsonify({"message": "Preflight request handled"})
     response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"]
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
     response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
     return response, 204
 
