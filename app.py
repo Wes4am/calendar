@@ -37,7 +37,7 @@ def fetch_token():
         print(f"Error fetching token: {e}")
         return None
 
-# Handle preflight OPTIONS requests
+# Ensure preflight OPTIONS requests are handled properly
 @app.route("/<path:path>", methods=["OPTIONS"])
 def handle_preflight(path):
     response = jsonify({"message": "Preflight request handled"})
@@ -55,8 +55,8 @@ def submit_form():
         return jsonify({"error": "Failed to fetch access token"}), 500
 
     payload = {
-        "branchid": request_data.get("branchid", "TMP"),  # Default to "TMP"
-        "productid": request_data.get("productid", "Bath"),  # Default to "Bath"
+        "branchid": request_data.get("branchid", "TMP"),
+        "productid": request_data.get("productid", "Bath"),
         "zip": request_data.get("zip", ""),
     }
 
