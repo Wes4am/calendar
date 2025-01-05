@@ -73,36 +73,64 @@ def book_appointment():
     request_data = request.json
     print("Request Data Received:", request_data)
 
-    # Extract the token from the request payload
     access_token = request_data.get("access_token")
     if not access_token:
         return jsonify({"error": "Access token is missing"}), 400
 
-    # Required fields validation
-    required_fields = ["firstname", "lastname", "apptdate", "appttime", "phone", "zip"]
-    for field in required_fields:
-        if not request_data.get(field):
-            return jsonify({"error": f"Missing required field: {field}"}), 400
-
     # Build the payload to send to the external API
     payload = {
+        # Name-related fields
         "prefix": request_data.get("prefix", ""),  # Optional
         "firstname": request_data.get("firstname"),
         "lastname": request_data.get("lastname"),
         "suffix": request_data.get("suffix", ""),  # Optional
-        "address1": request_data.get("address", ""),  # Optional
+        
+        # Address fields
+        "address1": request_data.get("address1", ""),  # Optional
         "address2": request_data.get("address2", ""),  # Optional
         "city": request_data.get("city", ""),  # Optional
         "state": request_data.get("state", ""),  # Optional
         "zip": request_data.get("zip"),
         "crossStreet": request_data.get("crossStreet", ""),  # Optional
+
+        # Phone-related fields
         "phone": request_data.get("phone"),
-        "phonetype": request_data.get("phonetype", 0),  # Optional, default to 0
-        "apptdate": request_data.get("apptdate"),
-        "appttime": request_data.get("appttime"),
+        "phonetype": request_data.get("phonetype", 0),  # Optional
+        "phone2": request_data.get("phone2", ""),  # Optional
+        "phonetype2": request_data.get("phonetype2", 0),  # Optional
+        "phone3": request_data.get("phone3", ""),  # Optional
+        "phonetype3": request_data.get("phonetype3", 0),  # Optional
+
+        # Product-related fields
+        "productID": request_data.get("productID", ""),  # Optional
+        "proddescr": request_data.get("proddescr", ""),  # Optional
+
+        # Contact fields
+        "email": request_data.get("email", ""),
+        "sender": request_data.get("sender", ""),  # Optional
+        "lognumber": request_data.get("lognumber", ""),  # Optional
+        "sentto": request_data.get("sentto", ""),  # Optional
+
+        # Scheduling and call preferences
         "callmorning": request_data.get("callmorning", False),  # Optional
         "callafternoon": request_data.get("callafternoon", False),  # Optional
         "callevening": request_data.get("callevening", False),  # Optional
+        "callweekend": request_data.get("callweekend", False),  # Optional
+        "apptdate": request_data.get("apptdate"),
+        "appttime": request_data.get("appttime"),
+        "datereceived": request_data.get("datereceived", ""),  # Optional
+
+        # Lead source and rank
+        "source": request_data.get("source", ""),  # Optional
+        "srs_id": request_data.get("srs_id", 0),  # Optional
+        "forceSource": request_data.get("forceSource", False),  # Optional
+        "brn_id": request_data.get("brn_id", ""),  # Optional
+        "rnk_id": request_data.get("rnk_id", 0),  # Optional
+
+        # Miscellaneous
+        "notes": request_data.get("notes", ""),  # Optional
+        "waiver": request_data.get("waiver", False),  # Optional
+        "qnum": request_data.get("qnum", 0),  # Optional
     }
 
     url = "https://apitest.leadperfection.com/api/Leads/LeadAdd"
@@ -110,6 +138,7 @@ def book_appointment():
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json",
     }
+
     print("Payload Sent to External API:", payload)
     print("Headers Sent to External API:", headers)
 
@@ -124,6 +153,7 @@ def book_appointment():
     except Exception as e:
         print(f"Error during API call: {e}")
         return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
