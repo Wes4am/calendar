@@ -37,7 +37,7 @@ def fetch_token():
 def home():
     return jsonify({"message": "API is running successfully!"})
 
-# Endpoint 1: Submit Survey and Create Calendar
+# Endpoint 1: Submit Survey and Return Access Token
 @app.route("/submit-form", methods=["POST"])
 def submit_form():
     access_token = fetch_token()  # Fetch token for this request
@@ -60,7 +60,8 @@ def submit_form():
     try:
         response = requests.post(url, headers=headers, data=payload)
         if response.status_code == 200:
-            return jsonify(response.json())
+            data = response.json()
+            return jsonify({"data": data, "access_token": access_token})  # Include token
         else:
             return jsonify({"error": response.text, "status": response.status_code}), response.status_code
     except Exception as e:
@@ -69,17 +70,14 @@ def submit_form():
 # Endpoint 2: Book Appointment
 @app.route("/book-appointment", methods=["POST"])
 def book_appointment():
-    access_token = fetch_token()
-    print(f"Access Token Used for /book-appointment: {access_token}")  # Debug log
-    if not access_token:
-        print("Failed to fetch access token.")
-        return jsonify({"error": "Failed to fetch access token"}), 500
-
     request_data = request.json
+    access_token = request_data.get("access_token")  # Get token from request
+    if not access_token:
+        return jsonify({"error": "Access token is missing"}), 400
+
     required_fields = ["firstname", "lastname", "apptdate", "appttime"]
     for field in required_fields:
         if not request_data.get(field):
-            print(f"Missing required field: {field}")
             return jsonify({"error": f"Missing required field: {field}"}), 400
 
     payload = {
@@ -105,19 +103,13 @@ def book_appointment():
         "Content-Type": "application/json",
     }
 
-    print("Headers Sent to LeadAdd API:", headers)  # Debug log
-    print("Payload Sent to LeadAdd API:", payload)  # Debug log
-
     try:
         response = requests.post(url, headers=headers, json=payload)
-        print("Response from LeadAdd API:", response.status_code, response.text)  # Debug response
         if response.status_code == 200:
             return jsonify(response.json())
         else:
-            print(f"LeadAdd API Error: {response.status_code} - {response.text}")
             return jsonify({"error": response.text, "status": response.status_code}), response.status_code
     except Exception as e:
-        print(f"Error during LeadAdd API call: {e}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
