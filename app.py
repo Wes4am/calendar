@@ -71,30 +71,38 @@ def submit_form():
 @app.route("/book-appointment", methods=["POST"])
 def book_appointment():
     request_data = request.json
-    access_token = request_data.get("access_token")  # Get token from request
+    print("Request Data Received:", request_data)
+
+    # Extract the token from the request payload
+    access_token = request_data.get("access_token")
     if not access_token:
         return jsonify({"error": "Access token is missing"}), 400
 
-    required_fields = ["firstname", "lastname", "apptdate", "appttime"]
+    # Required fields validation
+    required_fields = ["firstname", "lastname", "apptdate", "appttime", "phone", "zip"]
     for field in required_fields:
         if not request_data.get(field):
             return jsonify({"error": f"Missing required field: {field}"}), 400
 
+    # Build the payload to send to the external API
     payload = {
-        "branchID": "TMP",
-        "productID": "Bath",
-        "firstname": request_data.get("firstname", ""),
-        "lastname": request_data.get("lastname", ""),
-        "apptdate": request_data.get("apptdate", ""),
-        "appttime": request_data.get("appttime", ""),
-        "callmorning": request_data.get("callmorning", False),
-        "callafternoon": request_data.get("callafternoon", False),
-        "callevening": request_data.get("callevening", False),
-        "phone": request_data.get("phone", ""),
-        "email": request_data.get("email", ""),
-        "address": request_data.get("address", ""),
-        "city": request_data.get("city", ""),
-        "postal_code": request_data.get("postal_code", ""),
+        "prefix": request_data.get("prefix", ""),  # Optional
+        "firstname": request_data.get("firstname"),
+        "lastname": request_data.get("lastname"),
+        "suffix": request_data.get("suffix", ""),  # Optional
+        "address1": request_data.get("address", ""),  # Optional
+        "address2": request_data.get("address2", ""),  # Optional
+        "city": request_data.get("city", ""),  # Optional
+        "state": request_data.get("state", ""),  # Optional
+        "zip": request_data.get("zip"),
+        "crossStreet": request_data.get("crossStreet", ""),  # Optional
+        "phone": request_data.get("phone"),
+        "phonetype": request_data.get("phonetype", 0),  # Optional, default to 0
+        "apptdate": request_data.get("apptdate"),
+        "appttime": request_data.get("appttime"),
+        "callmorning": request_data.get("callmorning", False),  # Optional
+        "callafternoon": request_data.get("callafternoon", False),  # Optional
+        "callevening": request_data.get("callevening", False),  # Optional
     }
 
     url = "https://apitest.leadperfection.com/api/Leads/LeadAdd"
@@ -102,14 +110,19 @@ def book_appointment():
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json",
     }
+    print("Payload Sent to External API:", payload)
+    print("Headers Sent to External API:", headers)
 
     try:
         response = requests.post(url, headers=headers, json=payload)
+        print("Response Status Code:", response.status_code)
+        print("Response Text:", response.text)
         if response.status_code == 200:
             return jsonify(response.json())
         else:
             return jsonify({"error": response.text, "status": response.status_code}), response.status_code
     except Exception as e:
+        print(f"Error during API call: {e}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
