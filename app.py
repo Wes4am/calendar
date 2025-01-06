@@ -2,13 +2,27 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 import requests
 import os
+import time
 
 # Initialize Flask app
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
-# Function to fetch the access token
+# Global variables to store the token and expiry
+ACCESS_TOKEN = None
+TOKEN_EXPIRY = 0  # Timestamp for when the token expires
+
+# Function to fetch and refresh the access token
 def fetch_token():
+    global ACCESS_TOKEN, TOKEN_EXPIRY
+
+    # Check if the token is still valid
+    current_time = time.time()
+    if ACCESS_TOKEN and current_time < TOKEN_EXPIRY:
+        print("Using cached access token.")
+        return ACCESS_TOKEN
+
+    print("Fetching a new access token.")
     url = "https://apitest.leadperfection.com/token"
     headers = {"Content-Type": "application/x-www-form-urlencoded"}
     body = {
@@ -22,9 +36,12 @@ def fetch_token():
     try:
         response = requests.post(url, headers=headers, data=body)
         if response.status_code == 200:
-            access_token = response.json().get("access_token")
-            print(f"Fetched Access Token: {access_token}")  # Debug log
-            return access_token
+            token_data = response.json()
+            ACCESS_TOKEN = token_data.get("access_token")
+            expires_in = token_data.get("expires_in", 86400)  # Default to 24 hours
+            TOKEN_EXPIRY = current_time + expires_in - 60  # Refresh 1 minute before expiry
+            print(f"New Access Token: {ACCESS_TOKEN}")
+            return ACCESS_TOKEN
         else:
             print(f"Failed to fetch token: {response.status_code} - {response.text}")
             return None
@@ -71,8 +88,9 @@ def submit_form():
 @app.route("/book-appointment", methods=["POST"])
 def book_appointment():
     request_data = request.json
-    access_token = request_data.get("access_token")
-    print("Access Token Received:", access_token)
+    access_token = fetch_token()
+    if not access_token:
+        return jsonify({"error": "Failed to fetch access token"}), 500
 
     payload = {
         "firstname": request_data.get("firstname"),
@@ -90,19 +108,13 @@ def book_appointment():
         "Content-Type": "application/json",
     }
 
-    print("Payload Sent to API:", payload)
-    print("Headers Sent to API:", headers)
-
     try:
         response = requests.post(url, headers=headers, json=payload)
-        print("Response Status Code:", response.status_code)
-        print("Response Text:", response.text)
         if response.status_code == 200:
             return jsonify(response.json())
         else:
             return jsonify({"error": response.text, "status": response.status_code}), response.status_code
     except Exception as e:
-        print(f"Error during API call: {e}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
