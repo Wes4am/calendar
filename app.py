@@ -92,43 +92,50 @@ def book_appointment():
     if not access_token:
         return jsonify({"error": "Failed to fetch access token"}), 500
 
-    # Prepare the payload with additional fields
+    # Prepare the payload
     payload = {
-        "firstname": request_data.get("firstname"),
-        "lastname": request_data.get("lastname"),
-        "phone": request_data.get("phone"),
-        "zip": request_data.get("zip"),
-        "apptdate": request_data.get("apptdate"),   # Added field
-        "appttime": request_data.get("appttime"),   # Added field
-        "recdDate": request_data.get("recdDate"),   # Added field
-        "recdTime": request_data.get("recdTime"),   # Added field
-        "pro_id": request_data.get("pro_id"),       # Added field
+        "firstname": request_data.get("firstname", ""),
+        "lastname": request_data.get("lastname", ""),
+        "phone": request_data.get("phone", ""),
+        "zip": request_data.get("zip", ""),
+        "apptdate": request_data.get("apptdate", ""),
+        "appttime": request_data.get("appttime", ""),
+        "recdDate": request_data.get("recdDate", ""),
+        "recdTime": request_data.get("recdTime", ""),
+        "notes": request_data.get("notes", "string"),
+        "crossStreet": request_data.get("crossStreet", "string"),
+        "waiver": request_data.get("waiver", "false"),
+        "phone2": request_data.get("phone2", "string"),
+        "phone3": request_data.get("phone3", "string"),
+        "user1": request_data.get("user1", "string"),
+        "user2": request_data.get("user2", "string"),
+        "user3": request_data.get("user3", "string"),
+        "user4": request_data.get("user4", "string"),
+        "user5": request_data.get("user5", "string"),
+        "rnk_id": request_data.get("rnk_id", "0"),
+        "datereceived": request_data.get("datereceived", ""),
+        "state": request_data.get("state", ""),
+        # Add all remaining fields here
     }
 
-    # Add user1 to user15 with empty data
-    for i in range(1, 16):
-        payload[f"user{i}"] = ""
+    # Encode the payload for x-www-form-urlencoded
+    encoded_payload = urllib.parse.urlencode(payload)
 
     url = "https://apitest.leadperfection.com/api/Leads/LeadAdd"
     headers = {
         "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json",
+        "Content-Type": "application/x-www-form-urlencoded",
     }
 
-    # Debugging logs
-    print(f"Access Token Used: {access_token}")
-    print(f"Payload Sent: {payload}")
-    print(f"Headers Sent: {headers}")
-
     try:
-        response = requests.post(url, headers=headers, json=payload)
+        response = requests.post(url, headers=headers, data=encoded_payload)
         print(f"Response Status: {response.status_code}")
         print(f"Response Body: {response.text}")
 
         if response.status_code == 200:
             return jsonify(response.json())
         else:
-            return jsonify({"error": response.text, "status": response.status_code}), response.status_code, print(f"Access Token Used: {access_token}")
+            return jsonify({"error": response.text, "status": response.status_code}), response.status_code
     except Exception as e:
         print(f"Error during API call: {e}")
         return jsonify({"error": str(e)}), 500
