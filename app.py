@@ -128,7 +128,7 @@ def book_appointment():
         if response.status_code == 200:
             return jsonify(response.json())
         else:
-            return jsonify({"error": response.text, "status": response.status_code}), response.status_code
+            return jsonify({"error": response.text, "status": response.status_code}), response.status_code, print(f"Access Token Used: {access_token}")
     except Exception as e:
         print(f"Error during API call: {e}")
         return jsonify({"error": str(e)}), 500
