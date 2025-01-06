@@ -92,15 +92,22 @@ def book_appointment():
     if not access_token:
         return jsonify({"error": "Failed to fetch access token"}), 500
 
+    # Prepare the payload with additional fields
     payload = {
         "firstname": request_data.get("firstname"),
         "lastname": request_data.get("lastname"),
         "phone": request_data.get("phone"),
         "zip": request_data.get("zip"),
-        "apptdate": request_data.get("apptdate"),
-        "appttime": request_data.get("appttime"),
-        "callmorning": request_data.get("callmorning", False)
+        "apptdate": request_data.get("apptdate"),   # Added field
+        "appttime": request_data.get("appttime"),   # Added field
+        "recdDate": request_data.get("recdDate"),   # Added field
+        "recdTime": request_data.get("recdTime"),   # Added field
+        "pro_id": request_data.get("pro_id"),       # Added field
     }
+
+    # Add user1 to user15 with empty data
+    for i in range(1, 16):
+        payload[f"user{i}"] = ""
 
     url = "https://apitest.leadperfection.com/api/Leads/LeadAdd"
     headers = {
@@ -108,13 +115,22 @@ def book_appointment():
         "Content-Type": "application/json",
     }
 
+    # Debugging logs
+    print(f"Access Token Used: {access_token}")
+    print(f"Payload Sent: {payload}")
+    print(f"Headers Sent: {headers}")
+
     try:
         response = requests.post(url, headers=headers, json=payload)
+        print(f"Response Status: {response.status_code}")
+        print(f"Response Body: {response.text}")
+
         if response.status_code == 200:
             return jsonify(response.json())
         else:
             return jsonify({"error": response.text, "status": response.status_code}), response.status_code
     except Exception as e:
+        print(f"Error during API call: {e}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
